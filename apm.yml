@@ -1,5 +1,6 @@
 name: team-toolkit
 version: 1.0.0
+license: MIT
 description: >-
   Team toolkit published through an APM marketplace: a code-review agent,
   a PR-description skill, and commit-message instructions. Demonstrates

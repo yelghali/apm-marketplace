@@ -1,0 +1,20 @@
+{
+  "name": "team-toolkit",
+  "owner": {
+    "name": "yelghali",
+    "url": "https://github.com/yelghali"
+  },
+  "plugins": [
+    {
+      "name": "team-toolkit",
+      "description": "Code-review agent, PR-description skill, and commit-message instructions.",
+      "version": "1.0.0",
+      "source": {
+        "source": "github",
+        "repo": "yelghali/apm-marketplace",
+        "ref": "v1.0.0",
+        "sha": "b2ada4266319b7fbc3a130bd5c647553ccbc2b55"
+      }
+    }
+  ]
+}
