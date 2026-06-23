@@ -5,7 +5,7 @@ This POC demonstrates the full **Agent Package Manager (APM)** loop:
 1. **Publish** a package of primitives (an **agent**, a **skill**, and an
    **instruction**) to a **marketplace**.
 2. **Consume** that package from another repo and have the primitives appear in
-   **GitHub Copilot** and **Claude Code**.
+   **GitHub Copilot**.
 
 | Role | Repo |
 |------|------|
@@ -85,7 +85,7 @@ marketplace:
     name: yelghali
     url: https://github.com/yelghali
   outputs:
-    claude: {}                       # -> .claude-plugin/marketplace.json
+    claude: {}                       # marketplace index format (Anthropic-compatible spec)
   claude:
     output: .claude-plugin/marketplace.json
   packages:
@@ -94,6 +94,12 @@ marketplace:
       source: yelghali/apm-marketplace
       version: "^1.0.0"
 ```
+
+> The `outputs`/`claude` keys select APM's marketplace **index format**. APM
+> reuses the open Anthropic marketplace spec, so the generated index lives at
+> `.claude-plugin/marketplace.json`. This is the marketplace mechanism itself —
+> `apm marketplace add` auto-detects that path — and is independent of which
+> coding agent ultimately consumes the package.
 
 Scaffold it yourself with `apm marketplace init --owner yelghali`.
 
@@ -113,21 +119,20 @@ git tag v1.0.0
 git push origin v1.0.0          # the tag MUST exist before `apm pack`
 
 apm marketplace check           # every package ref/range resolves -> green
-apm pack                        # writes .claude-plugin/marketplace.json
+apm pack                        # writes the marketplace index
 
 git add .claude-plugin/marketplace.json
-git commit -m "build: marketplace.json"
+git commit -m "build: marketplace index"
 git push
 ```
 
-The generated [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json)
-pins the package to the resolved tag + commit SHA. It is byte-compatible with
-Anthropic's `marketplace.json`, so Claude Code, Copilot CLI, and APM all read the
-same artifact.
+The generated marketplace index pins the package to the resolved tag + commit
+SHA. It is the standard APM marketplace artifact that `apm marketplace add`
+reads.
 
 ---
 
-## 4. Consume (consumer repo)
+## 4. Consume in GitHub Copilot (consumer repo)
 
 > ⚠️ **Avoid the hang.** `apm marketplace add` / `apm install` shell out to git.
 > If Git Credential Manager pops an interactive prompt, the command hangs. Make
@@ -152,20 +157,19 @@ apm marketplace browse yelghali-tools          # shows: team-toolkit
 
 # Install the package from the marketplace, deploy to GitHub Copilot
 apm install team-toolkit@yelghali-tools --target copilot
-
-# Also deploy to Claude Code
-apm install --target claude
 ```
 
-### Where the primitives land
+### Where the primitives land (GitHub Copilot)
 
-| Target | Skill | Agent | Instruction |
-|--------|-------|-------|-------------|
-| **GitHub Copilot** | `.agents/skills/pr-description/SKILL.md` | `.github/agents/code-reviewer.agent.md` | `.github/instructions/commit-style.instructions.md` |
-| **Claude Code** | `.claude/skills/pr-description/SKILL.md` | `.claude/agents/code-reviewer.md` | `.claude/rules/commit-style.md` |
+| Primitive | Path |
+|-----------|------|
+| Skill | `.agents/skills/pr-description/SKILL.md` |
+| Agent | `.github/agents/code-reviewer.agent.md` |
+| Instruction | `.github/instructions/commit-style.instructions.md` |
 
-`.agents/skills/` is the cross-client location (Copilot, Cursor, Codex, Gemini,
-OpenCode read it). Claude Code reads `.claude/skills/`.
+`.agents/skills/` is the cross-client skill location (Copilot, Cursor, Codex,
+Gemini, OpenCode all read it). Agents and instructions deploy under `.github/`
+for Copilot.
 
 ### What gets committed
 
@@ -173,7 +177,7 @@ OpenCode read it). Claude Code reads `.claude/skills/`.
 |------|---------|-----|
 | `apm.yml` | ✅ | Declares the dependency |
 | `apm.lock.yaml` | ✅ | Pins commit SHA + content hashes |
-| `.github/`, `.claude/`, `.agents/` | ✅ | Deployed primitives — available on clone |
+| `.github/`, `.agents/` | ✅ | Deployed primitives — available on clone |
 | `apm_modules/` | ❌ | Cache; rebuilt by `apm install` (auto-gitignored) |
 
 > The consumer's `apm.yml` records the dependency as the **concrete git ref**
@@ -191,10 +195,6 @@ description for my staged changes"* → the `pr-description` skill activates.
 Type `@code-reviewer review my staged changes` → the agent runs. The
 `commit-style` instruction applies automatically to all files.
 
-**Claude Code**: open the consumer repo. The skill auto-activates by its
-description; the agent is available as a subagent; the rule is loaded from
-`.claude/rules/`.
-
 ---
 
 ## 6. Update flow
@@ -205,7 +205,7 @@ Producer ships a new version:
 # bump version in apm.yml to 1.1.0, edit primitives
 git commit -am "feat: v1.1.0"; git push
 git tag v1.1.0; git push origin v1.1.0
-apm pack; git commit -am "build: marketplace.json v1.1.0"; git push
+apm pack; git commit -am "build: marketplace index v1.1.0"; git push
 ```
 
 Consumer pulls it:
@@ -219,9 +219,9 @@ apm install --target copilot    # redeploy
 
 ## 7. GitLab variant (production target)
 
-The actual production setup uses **GitLab** repos with **Claude Code** + **GitHub
-Copilot**. Only the host and authentication change — the package layout,
-primitives, and `apm pack` step are identical.
+The actual production setup uses **GitLab** repos with **GitHub Copilot**. Only
+the host and authentication change — the package layout, primitives, and
+`apm pack` step are identical.
 
 ### 7a. Producer on GitLab
 
@@ -235,7 +235,7 @@ marketplace:
     url: https://gitlab.com/acme
   sourceBase: https://gitlab.com/acme/agent-marketplace   # optional shared base
   outputs:
-    claude: {}
+    claude: {}                       # marketplace index format (host-independent)
   claude:
     output: .claude-plugin/marketplace.json
   packages:
@@ -245,8 +245,8 @@ marketplace:
 ```
 
 Publish exactly as in step 3 (`git push`, `git tag v1.0.0`, `git push --tags`,
-`apm pack`, commit `marketplace.json`). For **private** GitLab repos set a token
-so `apm pack`'s `git ls-remote` is non-interactive:
+`apm pack`, commit the marketplace index). For **private** GitLab repos set a
+token so `apm pack`'s `git ls-remote` is non-interactive:
 
 ```bash
 export GITLAB_APM_PAT=glpat-xxxxxxxx          # or GITLAB_TOKEN
@@ -256,7 +256,7 @@ export GITLAB_HOST=gitlab.acme.internal       # single host
 export APM_GITLAB_HOSTS=gitlab.acme.internal,gitlab.partner.io
 ```
 
-### 7b. Consumer on GitLab
+### 7b. Consumer on GitLab (GitHub Copilot)
 
 ```bash
 export GITLAB_APM_PAT=glpat-xxxxxxxx
@@ -269,7 +269,6 @@ apm marketplace add gitlab.com/acme/agent-marketplace --host gitlab.com --name a
 apm marketplace add https://gitlab.acme.internal/acme/agent-marketplace.git#v1.0.0 --name acme-tools
 
 apm install team-toolkit@acme-tools --target copilot
-apm install --target claude
 ```
 
 Direct dependency form (no marketplace) in a consumer `apm.yml`:

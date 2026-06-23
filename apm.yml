@@ -5,7 +5,7 @@ description: >-
   Team toolkit published through an APM marketplace: a code-review agent,
   a PR-description skill, and commit-message instructions. Demonstrates
   publishing Agents/Skills/Instructions and consuming them with GitHub
-  Copilot and Claude Code.
+  Copilot.
 author: yelghali
 
 # No remote dependencies -- this repo *is* the package.
@@ -28,8 +28,10 @@ marketplace:
     name: yelghali
     url: https://github.com/yelghali
 
+  # `apm pack` writes the APM marketplace index that `apm marketplace add`
+  # auto-detects (Anthropic-compatible marketplace spec, also read by Copilot CLI + APM).
   outputs:
-    claude: {}            # generates .claude-plugin/marketplace.json (Claude Code + Copilot CLI + APM)
+    claude: {}
 
   claude:
     output: .claude-plugin/marketplace.json

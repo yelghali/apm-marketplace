@@ -1,5 +1,5 @@
 # APM package cache -- rebuilt from apm.lock.yaml on `apm install`
 apm_modules/
 
-# Local pack bundle output (the committed artifact is .claude-plugin/marketplace.json)
+# Local pack bundle output (the committed artifact is the APM marketplace index)
 build/
