@@ -1,0 +1,40 @@
+name: team-toolkit
+version: 1.0.0
+description: >-
+  Team toolkit published through an APM marketplace: a code-review agent,
+  a PR-description skill, and commit-message instructions. Demonstrates
+  publishing Agents/Skills/Instructions and consuming them with GitHub
+  Copilot and Claude Code.
+author: yelghali
+
+# No remote dependencies -- this repo *is* the package.
+# `includes: auto` ships everything under .apm/ to consumers.
+dependencies:
+  apm: []
+  mcp: []
+includes: auto
+scripts: {}
+
+# ---------------------------------------------------------------------------
+# Marketplace index. This same repo publishes a curated marketplace that
+# lists one package (team-toolkit -> this repo). Consumers register it with
+#   apm marketplace add yelghali/apm-marketplace
+# and install with
+#   apm install team-toolkit@apm-marketplace
+# ---------------------------------------------------------------------------
+marketplace:
+  owner:
+    name: yelghali
+    url: https://github.com/yelghali
+
+  outputs:
+    claude: {}            # generates .claude-plugin/marketplace.json (Claude Code + Copilot CLI + APM)
+
+  claude:
+    output: .claude-plugin/marketplace.json
+
+  packages:
+    - name: team-toolkit
+      description: Code-review agent, PR-description skill, and commit-message instructions.
+      source: yelghali/apm-marketplace
+      version: "^1.0.0"
